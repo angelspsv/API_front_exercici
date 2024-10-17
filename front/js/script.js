@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 const row = document.createElement("tr");
 
                 const nomAluCell = document.createElement("td");
-                nomAluCell.textContent = alumne.NomAlumne;
+                nomAluCell.textContent = alumne.nom_alumne;
                 row.appendChild(nomAluCell);
 
                 const cicleCell = document.createElement("td");

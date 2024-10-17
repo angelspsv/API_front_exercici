@@ -1,4 +1,3 @@
-from typing import Union
 from typing import List, Dict
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
@@ -31,7 +30,7 @@ class Alumne(BaseModel):
 
 #introduit per la pràctica 2
 class TablaAlumne(BaseModel):
-    nombre: str
+    nom_alumne: str
     cicle: str
     curs: int
     grup: str
@@ -247,14 +246,11 @@ def alumneJoinAula():
         alumnes_list = []
         for alumne in alumnes:
             alumne_dict = {
-                "id_alumne": alumne[0],
-                "nom_alumne": alumne[1],
-                "cicle": alumne[2],
-                "curs": alumne[3],
-                "grup": alumne[4],
-                "desc_aula": alumne[5],
-                "edifici": alumne[6],
-                "pis": alumne[7]
+                "nom_alumne": alumne[0],
+                "cicle": alumne[1],
+                "curs": alumne[2],
+                "grup": alumne[3],
+                "desc_aula": alumne[4]
             }
             alumnes_list.append(alumne_dict)
 
