@@ -44,19 +44,105 @@ def read_root():
     return {"Hola Toni!"}
 
 
+#endpoint
+#exercici de prova
+@app.get("/prueba", response_model=List[TablaAlumne])
+def muestrame_los_alumnos():
+    conn = db_connexio()
+    cur = conn.cursor()
+    try:
+        query_sql = "SELECT alumne.nom_alumne, alumne.cicle, alumne.curs, alumne.grup, aula.desc_aula FROM alumne JOIN aula ON alumne.id_aula = aula.id_aula"
+        cur.execute(query_sql)
+        alumnes = cur.fetchall()
+        #pasem els resultats a diccionari
+        alumnes_list = []
+        for alumne in alumnes:
+            alumne_dict = {
+                "nom_alumne": alumne[0],
+                "cicle": alumne[1],
+                "curs": alumne[2],
+                "grup": alumne[3],
+                "desc_aula": alumne[4]
+            }
+            alumnes_list.append(alumne_dict)
+        #retornem els resultats en json
+        return alumnes_list
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtenir els alumnes: {str(e)}")
+    finally:
+        cur.close()
+        conn.close()
+
+# Aquest exercici (Ex1 Prac1) s'ha modificat per l'Apartat 2 de la segona pràctica 
+#Ara es poden fer consultes mes complexes amb order by, contain(LIKE),
+# skip & limit (skip per treure resultats del principi i limit, limita la quantitat de resultats)
 # EXERCICI 1
 #endpoint
 #funcio per veure tots els alumnes de la taula
-@app.get("/alumne/list/", response_model=List[Dict])
-def get_alumnes():
-    alumnes = read_alumnes()
+@app.get("/alumnes/list", response_model=List[TablaAlumne])
+def read_alumnes(orderby: str | None = None, contain: str | None = None,
+                 skip: int = 0, limit: int | None = None):
+    #connexió a la bbdd
+    conn = db_connexio()
+    cur = conn.cursor()
 
-    # Si hi ha error en la connexió a la bbdd, retorna excepció
-    if isinstance(alumnes, dict) and "status" in alumnes and alumnes["status"] == -1:
-        raise HTTPException(status_code=500, detail=alumnes["message"])
-    
-    alumnes_sch = alumne.alumnes_schema(alumnes)
-    return alumnes_sch
+    try:
+        #consultes sql_query per cada cas
+        #combinació 1 amb orderby ASC i DESC
+        if orderby in ["asc", "desc"]:
+            query = f"""
+            SELECT alumne.nom_alumne, alumne.cicle, alumne.curs, alumne.grup, aula.desc_aula
+            FROM alumne
+            JOIN aula ON alumne.id_aula = aula.id_aula
+            ORDER BY alumne.nom_alumne {orderby.upper()}
+            """
+
+        #combinació 2 de contain
+        elif contain:
+            query = f"""
+            SELECT alumne.nom_alumne, alumne.cicle, alumne.curs, alumne.grup, aula.desc_aula
+            FROM alumne
+            JOIN aula ON alumne.id_aula = aula.id_aula
+            WHERE alumne.nom_alumne LIKE '%{contain}%'
+            """
+
+        #combinació 3 de skip & limit
+        elif limit is not None:
+            query = f"""
+            SELECT alumne.nom_alumne, alumne.cicle, alumne.curs, alumne.grup, aula.desc_aula
+            FROM alumne
+            JOIN aula ON alumne.id_aula = aula.id_aula
+            LIMIT {limit} OFFSET {skip}
+            """
+
+        #executem la consulta sql
+        cur.execute(query)
+        alumnes = cur.fetchall()
+
+        #pasem els resultats a diccionari
+        alumnes_list = []
+        for alumne in alumnes:
+            alumne_dict = {
+                "nom_alumne": alumne[0],
+                "cicle": alumne[1],
+                "curs": alumne[2],
+                "grup": alumne[3],
+                "desc_aula": alumne[4]
+            }
+            alumnes_list.append(alumne_dict)
+
+        #retornem els alumnes en format json
+        return alumnes_list
+
+    #llançem excepcio
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Error al obtenir els alumnes: " + str(e))
+
+    finally:
+        #tanquem les connexions
+        cur.close()
+        conn.close()
+
 
 
 # EXERCICI 2
