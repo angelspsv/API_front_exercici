@@ -7,6 +7,27 @@
 ![Imatge de la visualizatció de les dades al navegador](captura_practica2_apartat1.jpg)
 
 
+![Imatge de la visualizatció del select-join a la bbdd](captura_bbdd_query_join.jpg)
+
+
+![Imatge de l'execució de la query amb el Swagger](captura_swagger_apar1.jpg)
+
+
+# Apartat 2: Consultes avançades
+
++ _order by_
+
+
+
++ _contain_
+
+
+
++ _skip & limit_
+
+
+
+
 
 
 
