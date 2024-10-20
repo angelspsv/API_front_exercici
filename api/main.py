@@ -1,6 +1,6 @@
 from typing import List, Dict
 from pydantic import BaseModel
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 from read_file import read_alumnes
 from read_file import read_alumne_id
 from read_file import read_aula_id
@@ -157,47 +157,88 @@ def importarDadesCSV():
     # connexió a la bbdd
     conn = db_connexio()
     cur = conn.cursor()
-    
-    with open("alumnes_aules.csv","r") as csvfile:
-    #fem servir next() per saltar la 1a linia
-    # desc_aula, edifici, pis, nom_alumne, cicle, curs, grup
-        next(csvfile)
-        #resta de linies amb dades per insert 
-        linies = csvfile.readlines()
-        
-        for linia in linies:
-        #començem a tractar les dades linia x linia
-        #transformem cada linia en una llista
-        #dividim manualment i separem per ','
-            #amb cada linia fem una llista amb valors
-            valors = linia.strip().split(',')
-            
-            #valors[0] es desc_aula
-            cur.execute("SELECT desc_aula FROM aula WHERE desc_aula = %s", (valors[0],))
+    alumnes_inserits = 0
+    errors = []
 
-            #el resultat es desa en la variable existeix
-            existeix = cur.fetchone()
-            #si desc_aula no existeix es pot fer l'insert a la taula aula
-            if not existeix:
+    try:
+        with open("alumnes_aules.csv","r") as csvfile:
+        #fem servir next() per saltar la 1a linia
+        # desc_aula, edifici, pis, nom_alumne, cicle, curs, grup
+            next(csvfile)
+            #resta de linies amb dades per insert 
+            linies = csvfile.readlines()
+        
+            for linia in linies:
+            #començem a tractar les dades linia x linia
+            #transformem cada linia en una llista
+            #dividim manualment i separem per ','
+            #amb cada linia fem una llista amb valors
+                valors = linia.strip().split(',')
+
+                #id_aula
+                id_aula = None
+
                 try:
-                #fem l'insert query per entrar les dades de la nova aula
-                    cur.execute("""INSERT INTO aula (desc_aula, edifici, pis) VALUES (%s, %s, %s)""", (valors[0], valors[1], valors[2]))
-                    print("Nova aula " + valors[0] + " inserida correctamt")
+                #valors[0] es desc_aula
+                    cur.execute("SELECT desc_aula FROM aula WHERE desc_aula = %s", (valors[0],))
+
+                    #el resultat es desa en la variable existeix
+                    existeix = cur.fetchone()
+                    #si desc_aula no existeix es pot fer l'insert a la taula aula
+                    if not existeix:
+                    #fem l'insert query per entrar les dades de la nova aula
+                        cur.execute("""INSERT INTO aula (desc_aula, edifici, pis) VALUES (%s, %s, %s)""", (valors[0], valors[1], valors[2]))
+                        print("Nova aula " + valors[0] + " inserida correctamt")
                 
+            
+                    #independentment si existeis o no, obtenim l'id_aula
+                    cur.execute("SELECT id_aula FROM aula WHERE desc_aula = %s", (valors[0],))
+                    id_aula = cur.fetchone()[0]
+
                 except Exception as e:
-                    print("Aula " + valors[0] + " ja existeix. " + str(e))
+                    errors.append("Error al inserir aula " + valors[0] + ": " + str(e))  
+                    #Saltar a la següent linia
+                    continue
+            
+                #per alumne 
+                try:
+                #inserim l'alumne a la taula mes l'id_aula
+                    cur.execute("""INSERT INTO alumne (id_aula, nom_alumne, cicle, curs, grup) VALUES (%s, %s, %s, %s, %s)""", (id_aula, valors[3], valors[4], valors[5], valors[6]))
+                    print("Alumne " + valors[3] + " inserit correctament")
+                    #contador alumnes inserits
+                    alumnes_inserits+=1
+            
+                except Exception as e:
+                    errors.append(f"Error al inserir alumne {valors[3]}: {str(e)}")
+                    #saltar a la següent linia  
+                    continue  
+
         
         #desem els canvis en la bbdd
         conn.commit()
 
-        
+        # Retornem un missatge d'èxit si no hi ha errors
+        if not errors:
+            return {
+                "status": "success",
+                "message": f"{alumnes_inserits} alumnes inserits correctament"
+            }
+        else:
+            return {
+                "status": "partial_success",
+                "message": f"{alumnes_inserits} alumnes inserits correctament, pero alguns errors van ocorrer",
+                "errors": errors
+            }
 
+    except Exception as e:
+        # Si hi ha un error general, retorna un missatge d'error
+        conn.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error en el proces: {str(e)}")
+
+    finally:
+    #tanquem la connexio
         cur.close()
         conn.close()
-
-
-
-
 
 
 
