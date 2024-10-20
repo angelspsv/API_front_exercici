@@ -100,7 +100,7 @@ _Imatge després d'un nou insert des d'un fitxer csv i el resultat a la taula al
 .
 .
 
-_Imatge després d'un nou insert des d'un fitxer csv i el resultat a la taula aula i del resultat en la consola. En el primer insert de dos alumnes, Daniel és inserit sense problemes, però en el segon insert tornem ha intentar l'insert de Daniel i una altra alumna. La segona alumna s'ha inserrit correctament i Daniel no per la restricció (UNIQUE) definida a la bbdd_
+_Imatge després d'un nou insert des d'un fitxer csv i el resultat a la taula aula i del resultat en la consola. En el primer insert de dos alumnes, Daniel és inserit sense problemes, però en el segon insert tornem ha intentar l'insert de Daniel i una altra alumna(Laura). La segona alumna s'ha inserit correctament i Daniel no per la restricció (UNIQUE) definida a la taula alumne/bbdd_
 
 ![Imatge despres nou insert taula aula i consola](captura_aula_despres.jpg)
 
