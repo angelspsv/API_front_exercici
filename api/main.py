@@ -7,7 +7,7 @@ from read_file import read_aula_id
 from conn_file import db_connexio
 import alumne
 from fastapi.middleware.cors import CORSMiddleware
-
+import csv
 
 #fem la api
 app = FastAPI()
@@ -142,6 +142,64 @@ def read_alumnes(orderby: str | None = None, contain: str | None = None,
         #tanquem les connexions
         cur.close()
         conn.close()
+
+
+
+#practica 2, apartat 3: carrega massiva de dades
+#endpoint
+# s'ha de desenvolupar una funció per fer un POST
+#  carregant dades des d'un fitxer csv a la bbdd ja existent 
+# IMPORTANT: abans de fer un insert a AULA no es pot repetir desc_aula
+# si ja existeix aquesta aula no es fara l'insert a la taula
+# l'alumne NO POT estar matriculat mes d'un cop a: cicle, curs, grup
+@app.post("/alumne/loadalumnes")
+def importarDadesCSV():
+    # connexió a la bbdd
+    conn = db_connexio()
+    cur = conn.cursor()
+    
+    with open("alumnes_aules.csv","r") as csvfile:
+    #fem servir next() per saltar la 1a linia
+    # desc_aula, edifici, pis, nom_alumne, cicle, curs, grup
+        next(csvfile)
+        #resta de linies amb dades per insert 
+        linies = csvfile.readlines()
+        
+        for linia in linies:
+        #començem a tractar les dades linia x linia
+        #transformem cada linia en una llista
+        #dividim manualment i separem per ','
+            #amb cada linia fem una llista amb valors
+            valors = linia.strip().split(',')
+            
+            #valors[0] es desc_aula
+            cur.execute("SELECT desc_aula FROM aula WHERE desc_aula = %s", (valors[0],))
+
+            #el resultat es desa en la variable existeix
+            existeix = cur.fetchone()
+            #si desc_aula no existeix es pot fer l'insert a la taula aula
+            if not existeix:
+                try:
+                #fem l'insert query per entrar les dades de la nova aula
+                    cur.execute("""INSERT INTO aula (desc_aula, edifici, pis) VALUES (%s, %s, %s)""", (valors[0], valors[1], valors[2]))
+                    print("Nova aula " + valors[0] + " inserida correctamt")
+                
+                except Exception as e:
+                    print("Aula " + valors[0] + " ja existeix. " + str(e))
+        
+        #desem els canvis en la bbdd
+        conn.commit()
+
+        
+
+        cur.close()
+        conn.close()
+
+
+
+
+
+
 
 
 
